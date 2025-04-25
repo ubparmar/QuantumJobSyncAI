@@ -1,9 +1,16 @@
+import os
+import sys
+
+# Insert project root (parent of this file) into sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+
 import streamlit as st
 
 from app import utils
 from app.inputs import render_search_form
 from app.job_search import search_linkedin_jobs
 from app.ai_matcher import rank_jobs_with_groq
+
 
 def main():
     st.set_page_config(
@@ -15,7 +22,7 @@ def main():
 
     # — OAuth flow —
     if "access_token" not in st.session_state:
-        params = st.experimental_get_query_params()
+        params = st.query_params  # <- replaced experimental_get_query_params
         code  = params.get("code", [None])[0]
         state = params.get("state", [None])[0]
 
@@ -23,21 +30,22 @@ def main():
             try:
                 token = utils.exchange_code_for_token(code)
                 st.session_state.access_token = token
-                st.experimental_set_query_params()  # clear URL
+                st.set_query_params()    # <- replaced experimental_set_query_params
             except Exception as e:
                 st.error(f"OAuth error: {e}")
-                return
-        else:
-            if "oauth_state" not in st.session_state:
-                st.session_state.oauth_state = utils.generate_state()
-            auth_url = utils.build_linkedin_auth_url(st.session_state.oauth_state)
-            st.markdown(f"[👉 Login with LinkedIn]({auth_url})")
             return
+
+        # first‐time: no code, so build & show the LinkedIn login link
+        if "oauth_state" not in st.session_state:
+            st.session_state.oauth_state = utils.generate_state()
+        auth_url = utils.build_linkedin_auth_url(st.session_state.oauth_state)
+        st.markdown(f"[👉 Login with LinkedIn]({auth_url})")
+        return
 
     # — After login —
     token = st.session_state.access_token
 
-    # Render filters + input
+    # Render filters + input form
     criteria = render_search_form()
     if st.sidebar.button("🔎 Search Jobs"):
         with st.spinner("Fetching jobs…"):
@@ -63,11 +71,12 @@ def main():
 
                     st.markdown(f"### [{title}]({job.get('applyUrl','')})")
                     st.write(f"**Company:** {company} • **Location:** {loc}")
-                    st.progress(score)  # visual bar
+                    st.progress(score)  # visual match‐bar
                     st.write("---")
 
             except Exception as e:
                 st.error(f"Error during search: {e}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,3 @@
-@echo off 
-cd app 
-streamlit run main.py 
+@echo off
+cd /d %~dp0
+streamlit run app/main.py
