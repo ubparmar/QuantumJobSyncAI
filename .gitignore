@@ -1,3 +1,20 @@
-__pycache__/ 
-.env 
-.streamlit/ 
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment variables
+.env
+
+# Virtual environment
+venv/
+
+# VS Code settings
+.vscode/
+
+# Streamlit cache
+.streamlit/
+
+# Mac/Linux/Windows system files
+.DS_Store
+Thumbs.db
